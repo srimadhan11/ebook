@@ -1,0 +1,11 @@
+# Logs
+*.log
+
+# environment variable
+.env
+
+# Dependency directory
+/node_modules
+
+#Books directory
+/ebooks

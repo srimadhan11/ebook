@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ebook Management System</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      #snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+      }
+
+      #snackbar.show {
+        visibility: visible;
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      }
+
+      @-webkit-keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @-webkit-keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+
+      @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+    </style>
+    <script>
+    var url = 'http://192.168.0.100:8080';
+    $(document).ready(function(){
+      $.ajax({
+        url: url + '/get/username',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          401: function() {
+            console.log('invalid user');
+          },
+          400: function() {
+            console.log('bad query request');
+            toast('bad query request');
+          },
+          200: function() {
+            toast('invalid user! redirecting to home');
+            setTimeout(function(){ home(); }, 3000);
+          }
+        }
+    });
+  });
+    function home() {
+      window.location.replace(url + '/home');
+    }
+    function login() {
+      //login
+      $.ajax({
+        url: url + '/post/login',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({username: $('#name').val(), password: $('#password').val()}),
+        dataType: 'json',
+        statusCode: {
+          200:  function() {
+            toast('logged in successfully');
+            setTimeout(function(){ home(); }, 4000);
+          },
+          400: function(){
+            toast('bad query request');
+          },
+          401: function() {
+            toast('incorrect username or password');
+          }
+        }
+      });
+    }
+    function toast(text) {
+      $('#snackbar').text(text);
+      $('#snackbar').addClass('show');
+      setTimeout(function(){ $('#snackbar').removeClass('show'); }, 3000);
+    }
+    function register() {
+      //register
+      $.ajax({
+        url: url + '/post/register',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify({username: $('#register-name').val(), password: $('#register-password').val(), securityQuestion: $('#securityQuestion').val(), answer: $('#answer').val()}),
+        dataType: 'json',
+        statusCode: {
+          200: function() {
+            toast('successfully registered and logged in');
+            setTimeout(function(){ home(); }, 4000);
+          },
+          400: function() {
+            toast('bad query request');
+          },
+          401: function(){
+            toast('successfully registered and failed to log in');
+          },
+          500: function() {
+            toast('internal server error');
+          }
+        }
+      });
+    }
+    </script>
+  </head>
+  <body>
+    <h1>E-Book Store</h1>
+    <h3>Login/Register</h3>
+    <button onclick='home();return false;' class="btn">Back to Home</button>
+
+    <h2>Login/Register</h2>
+    <div class="container">
+      <div class="row">
+
+        <div class="col-md-6">
+          <h3>Login</h3>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label class="control-label col-sm-2" for="name">Name:</label>
+              <div class="col-sm-8">
+                <input type="text" class="form-control" id="name" placeholder="Enter your name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-2" for="password">Password:</label>
+              <div class="col-sm-8">
+                <input type="password" class="form-control" id="password" placeholder="Enter your password">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <a href='/passwordReset'>Forgot password?</a>
+                <button onclick='login();return false;' type="submit" class="btn btn-primary">Login</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+
+        <div class="col-md-6">
+          <h3>Register</h3>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label class="control-label col-sm-4" for="register-name">Name:</label>
+              <div class="col-sm-8">
+                <input type="text" class="form-control" id="register-name" placeholder="Enter your name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-4" for="register-password">Password:</label>
+              <div class="col-sm-8">
+                <input type="password" class="form-control" id="register-password" placeholder="Enter password">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-4" for="securityQuestion">Security Question:</label>
+              <div class="col-sm-8">
+                <select class="form-control" id="securityQuestion">
+                  <option value='nothing'>Select</option>
+                  <option value = 'school'>what was the name of your first school?</option>
+                  <option value = 'hero'>who was your childhood hero?</option>
+                  <option value = 'number'>what is your lucky number?</option>
+                  <option value = 'pet'>what is your pets name?</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-4" for="answer">Answer:</label>
+              <div class="col-sm-8">
+                <input type="text" class="form-control" id="answer" placeholder="Enter your answer">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button onclick='register();return false;' type="submit" class="btn btn-primary">Register</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div id="snackbar"></div>
+  </body>
+</html>

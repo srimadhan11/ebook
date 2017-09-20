@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ebook Management System</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      #snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+      }
+
+      #snackbar.show {
+        visibility: visible;
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      }
+
+      @-webkit-keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @-webkit-keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+
+      @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+      div.card {
+          box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+          transition: 0.3s;
+          width: 100%;
+          height: 100%;
+          border-radius: 5px;
+      }
+      div.card:hover {
+          box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+      }
+      .horiUL{
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow-x: scroll;
+        white-space: nowrap;
+        display: inline;
+      }
+      .horiLI{
+        display: inline-block;
+        float: left;
+        width: 250px;
+        height: 300px;
+        background-color: #607D8B;
+        margin: 20px 10px 20px 10px;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+        transition: 0.3s;
+        border-radius: 5px;
+        flex-direction: row;
+      }
+      .horiLI:hover{
+        border-radius: 5px;
+        box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+        background-color: #78909C;
+      }
+      .horiA:hover{
+        color: white;
+        text-decoration: none;
+      }
+      .horiA{
+        width: 100%;
+        height: 100%;
+        color: white;
+        text-align: center;
+        padding: 16px;
+        text-decoration: none;
+      }
+    </style>
+    <script>
+    var url = 'http://192.168.0.100:8080';
+    $(document).ready(function(){
+      loadHome();
+    });
+    function loadContent() {
+      loadDeals();
+      loadOffers();
+    }
+    function loadDeals() {
+      $.ajax({
+        url: url + '/get/bestDeal',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function(responseText) {
+            responseText = JSON.parse(responseText);
+            var bestDeal='';
+            for ( item of responseText) {
+              bestDeal += createBookList(item.name, item.cost, item.authorName, item.description, item.publication, item.id);
+            }
+            if (bestDeal.length === 0) {
+              bestDeal = 'Nothing found';
+            }
+            var template = `<h3>New Deals</h3>
+                            <div style='height:350px;overflow:auto' class='container'>
+                              <ul class='horiUL'> ${bestDeal}
+                              </ul>
+                            </div>`;
+            $('#home-content-newdeals').html(template);
+          },
+          400: function() {
+            console.log('bad query request');
+          }
+        }
+      });
+
+    }
+    function loadOffers() {
+      $.ajax({
+        url: url + '/get/newOffer',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function(responseText) {
+            responseText = JSON.parse(responseText);
+            var newOffers='';
+            for ( items of responseText) {
+              newOffers += createBookList(items.name, items.cost, items.authorName, items.description, items.publication, items.id);
+            }
+            if (newOffers.length === 0) {
+              newOffers = 'Nothing found';
+            }
+            var template = `<h3>Best Offers</h3>
+                            <div style='height:350px;overflow:auto' class='container'>
+                              <ul class='horiUL'>${newOffers}
+                              </ul>
+                            </div>`;
+            $('#home-content-bestoffers').html(template);
+          },
+          400: function() {
+            console.log('bad query request');
+          }
+        }
+      });
+    }
+    function createBookList(name, price, author, description, publication,id) {
+      return `<li class='horiLI'>
+                <a class='horiA'>
+                  <h4><b>${name}</b></h4><span>Rs.${price}</span>  by <p><strong>${author}</strong></p><br>
+                  <p><h5>${publication}</h5></p>
+                  <p>${description}</p>
+                  <button type='button' onclick='addToCart(${id});return false;' class='btn btn-default btn-sm'>
+                    <span class='glyphicon glyphicon-shopping-cart'></span> Add to Cart
+                  </button>
+                </a>
+              </li>`;
+    }
+    function search() {
+      $.ajax({
+        url: url + '/get/search',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        data: {query: $('#searchbox').val()},
+        dataType: 'json',
+        statusCode: {
+          200: function(responseText) {
+            //responseText = JSON.parse(responseText);
+            var searchResult='';
+            for ( item of responseText) {
+              searchResult += createBookList(item.name, item.cost, item.authorName, item.description, item.publication, item.id);
+            }
+            if (searchResult === 0) {
+              searchResult = 'Nothing found';
+            }
+            var template = `<h3>Search Result</h3>
+                            <div style='height:350px;overflow:auto' class='container'>
+                              <ul class='horiUL'> ${searchResult}
+                              </ul>
+                            </div>`;
+            $('#home-content').html(template);
+            $('#home-content-newdeals').html('');
+            $('#home-content-bestoffers').html('');
+          },
+          400: function() {
+            console.log('bad query request');
+          }
+        }
+      });
+    }
+    function addToCart(bookId) {
+      $.ajax({
+        url: url + '/post/addToCart',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify({bookId: bookId}),
+        dataType: 'json',
+        statusCode: {
+          200: function() {
+            toast('added to cart');
+          },
+          400: function() {
+            console.log('bad query request');
+            toast('already added to cart');
+          },
+          401: function(){
+            toast('you need to login');
+          },
+          500: function() {
+            console.log('internal server error');
+          }
+        }
+      });
+    }
+    function logout() {
+      $.ajax({
+        url: url + '/get/logout',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function() {
+            toast('logged out');
+            loadHome();
+          },
+          401: function(){
+            toast('you are not logged in');
+            loadHome();
+          }
+        }
+      });
+    }
+    function loadHome() {
+      loadContent();
+      $('#home-content').html('');
+      $.ajax({
+        url: url + '/get/username',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function(responseText) {
+            $('#name').text('hi! ' + JSON.parse(responseText)[0].name);
+            $('#loginbtn').hide();
+            $('#logoutbtn').show();
+          },
+          400: function() {
+            console.log('bad query request');
+          },
+          401: function(){
+            $('#name').text('');
+            $('#logoutbtn').hide();
+            $('#loginbtn').show();
+          }
+        }
+      });
+
+    }
+    function toast(text) {
+      $('#snackbar').text(text);
+      $('#snackbar').addClass('show');
+      setTimeout(function(){ $('#snackbar').removeClass('show'); }, 3000);
+    }
+    </script>
+  </head>
+  <body>
+    <h1 onclick="loadHome();return false;">E-Book Store</h1>
+    <nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        <ul class="nav navbar-nav">
+          <li class="active"><a onclick="loadHome();return false;">Home</a></li>
+          <li><a href="/accountSettings">MyAccount</a></li>
+          <li><a href="/cart">Cart</a></li>
+          <li><a href="/orders">Orders</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><span style="display:block; height:15px;"></span><span id="name" style="color:white;padding:30px;"></span></li>
+          <li><a href="/loginRegister" id="loginbtn"><span class="glyphicon glyphicon-log-in"></span> Login/Register</a></li>
+          <li><a onclick="logout();return false;" id="logoutbtn"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="input-group col-sm-8">
+      <input type="text" class="form-control" placeholder="Search" name="search" id="searchbox">
+      <div class="input-group-btn">
+        <button class="btn btn-default" onclick="search();return false;" id="search" type="submit"><span class="glyphicon glyphicon-search"></span></button>
+      </div>
+    </div>
+
+    <div id="home-content-bestoffers"></div><br/><br/>
+    <div id="home-content-newdeals"></div>
+    <div id="home-content"></div>
+    <div id="snackbar"></div>
+
+  </body>
+</html>

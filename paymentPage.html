@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ebook Management System</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      #snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+      }
+
+      #snackbar.show {
+        visibility: visible;
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      }
+
+      @-webkit-keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @-webkit-keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+
+      @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+    </style>
+    <script>
+    var url = 'http://192.168.0.100:8080';
+    $(document).ready(function(){
+      $.ajax({
+        url: url + '/get/username',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function(responseText) {
+            console.log(JSON.parse(responseText)[0].name);
+            $('#name').text(JSON.parse(responseText)[0].name);
+          },
+          400: function() {
+            console.log('bad query request');
+            toast('bad query request');
+          },
+          401: function(){
+            console.log('invalid user');
+            toast('invalid user! redirecting to home');
+            setTimeout(function(){ home(); }, 4000);
+          }
+        }
+      });
+
+      //get payment cost
+      $.ajax({
+        url: url + '/get/orderCost',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        statusCode: {
+          200: function(responseText) {
+            var cost = parseInt(JSON.parse(responseText)[0].cost);
+            if (isNaN(cost)) {
+              cost = 0;
+            }
+            $('#cost').text(cost);
+          },
+          400: function() {
+            toast('bad query request');
+          },
+          401: function(){
+            toast('invalid user! redirecting to home');
+            setTimeout(function(){ home(); }, 4000);
+          }
+        }
+      });
+    });
+    function toast(text) {
+      $('#snackbar').text(text);
+      $('#snackbar').addClass('show');
+      setTimeout(function(){ $('#snackbar').removeClass('show'); }, 3000);
+    }
+    function cancelP() {
+      toast('cancelling the payment');
+      setTimeout(function(){ home(); }, 4000);
+    }
+    function home() {
+      window.location.replace(url + '/home');
+    }
+    function pay() {
+      if ($('#cost').html() == 0) {
+        toast('Nothing to pay');
+      } else {
+        //add items to order
+        toast('redirecting to payment page');
+        $.ajax({
+          url: url + '/post/pay',
+          type: 'POST',
+          contentType: 'application/json; charset=utf-8',
+          statusCode: {
+            200: function() {
+              toast('payment succeded! redirecting to home');
+              setTimeout(function(){ home(); }, 4000);
+            },
+            400: function() {
+              toast('bad query request');
+            },
+            401: function(){
+              toast('invalid user! redirecting to home');
+              setTimeout(function(){ home(); }, 4000);
+            },
+            500:function(){
+              toast('payment failed! redirecting to home');
+              setTimeout(function(){ home(); }, 4000);
+            }
+          }
+        });
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <h1>E-Book Store</h1>
+    <h3>Payment Page</h3>
+    <div class="col-md-8">
+      <form class="form-horizontal">
+        <div class="form-group">
+          <label class="control-label col-sm-4" for="cost">Total amount:</label>
+          <div class="col-sm-8">
+            <b>Rs. </b><span id="cost"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="control-label col-sm-4" for="name">User Name:</label>
+          <div class="col-sm-8">
+            <span id="name"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button onclick='pay();return false;' type="submit" class="btn btn-default">Proceed to Pay</button>
+            <button onclick='cancelP();return false;' type="submit" class="btn">Cancel Payment</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div id="snackbar"></div>
+  </body>
+</html>
